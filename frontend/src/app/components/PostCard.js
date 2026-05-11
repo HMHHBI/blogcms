@@ -3,13 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function PostCard({ post, isLoggedIn, onDelete }) {
-  const imageBaseUrl = process.env.NEXT_PUBLIC_API_URL.replace("/api", "");
   return (
     <article className="group bg-white rounded-3xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
       <div className="relative h-64 w-full overflow-hidden bg-gray-200">
         {post.image ? (
           <Image
-            src={`${imageBaseUrl}/storage/${post.image}`}
+            src={`${post.image}`}
             alt={post.post_title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500"

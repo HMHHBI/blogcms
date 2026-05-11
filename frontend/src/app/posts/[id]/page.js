@@ -2,23 +2,14 @@ import PostContent from "./PostContent";
 
 // 1. Data Fetching logic (Wahi purani)
 async function getPost(id) {
+  const API = process.env.NEXT_PUBLIC_API_URL;
   try {
     // Try using the actual local URL instead of IP for a second
-    const res = await fetch(`https://blog-cms-api.up.railway.app/api/posts/${id}`, {
+    const res = await fetch(`${API}/posts/${id}`, {
       cache: "no-store",
     });
 
-    // Agar upar wala fail ho, toh fallback to IP with Port
-    if (!res.ok) {
-      console.log("Fetching from direct URL failed, trying local IP...");
-      const fallback = await fetch(`https://0.0.0.0/api/posts/${id}`, {
-        cache: "no-store",
-        headers: { Host: "blog-cms-api.up.railway.app" },
-      });
-      if (!fallback.ok) return null;
-      const json = await fallback.json();
-      return json.data;
-    }
+    if (!res.ok) throw new Error("Failed to fetch post");
 
     const json = await res.json();
     return json.data;

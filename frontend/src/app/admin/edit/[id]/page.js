@@ -8,28 +8,47 @@ export default function EditPost() {
   const { id } = useParams();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null); // ✅ Image Preview
+  const [preview, setPreview] = useState(null);
+  const [categories, setCategories] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
     if (!localStorage.getItem("token")) router.push("/login");
 
-    // Purana data load karein
+    // Categories load karein dropdown ke liye
+    axios.get("/categories").then((res) => setCategories(res.data.data));
+
+    // Purana data load karein (Using your new PostResource keys)
     axios.get(`/posts/${id}`).then((res) => {
-      setTitle(res.data.data.post_title);
-      setContent(res.data.data.body);
-      setPreview(`https://blog-cms-api.up.railway.app/storage/${res.data.data.image}`);
+      const post = res.data.data;
+      setTitle(post.post_title); // Matches 'post_title' in Resource
+      setContent(post.body); // Matches 'body' in Resource
+      setCategoryId(post.category_id); // Matches 'category_id' you just added
+      setPreview(post.image); // Matches 'image' in Resource
     });
   }, [id, router]);
 
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!title.trim() || !content.trim() || !categoryId) {
+      alert("All fields are required!");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-    formData.append("category_id", 1);
-    formData.append("_method", "PUT"); // ✅ Laravel Workaround for FormData
+    formData.append("category_id", categoryId);
+    formData.append("_method", "PUT"); // Laravel Spoofing
+
     if (image) formData.append("image", image);
 
     try {
@@ -38,7 +57,7 @@ export default function EditPost() {
       });
       router.push("/");
     } catch (err) {
-      alert("Update failed!");
+      alert(err.response?.data?.message || "Update failed");
     }
   };
 
@@ -54,32 +73,51 @@ export default function EditPost() {
             className="w-full text-2xl font-bold border-b p-2 outline-none"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title"
           />
+
+          <select
+            className="w-full p-4 bg-slate-50 rounded-xl outline-none"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+          >
+            <option value="">Select Category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.title}
+              </option>
+            ))}
+          </select>
+
           <textarea
             rows="8"
             className="w-full p-4 bg-slate-50 rounded-xl outline-none"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            placeholder="Content"
           />
 
-          {/* Preview Current/New Image */}
           {preview && (
-            <img src={preview} className="h-40 rounded-xl" alt="preview" />
+            <img
+              src={preview}
+              className="h-40 rounded-xl object-cover"
+              alt="preview"
+            />
           )}
 
           <input
             type="file"
+            accept="image/*"
             onChange={(e) => {
               const file = e.target.files[0];
               if (file) {
                 setImage(file);
-                // Nayi select ki hui image ka preview dikhaein
                 setPreview(URL.createObjectURL(file));
               }
             }}
           />
 
-          <button className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">
+          <button className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition">
             Update Post
           </button>
         </form>
