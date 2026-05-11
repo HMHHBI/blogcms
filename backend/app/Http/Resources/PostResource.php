@@ -19,9 +19,10 @@ class PostResource extends JsonResource
             'post_title' => $this->title,
             'url_slug' => $this->slug,
             'body' => $this->content,
-            'image' => $this->image,
+            'image' => $this->image_url,
             'is_premium' => (bool) $this->is_premium,
             'published_at' => $this->created_at->format('d M Y'),
+            'category_id' => $this->category_id,
             // ✅ Category ka data clean karke bhej rahe hain
             'category' => new CategoryResource($this->whenLoaded('category')),
             'author' => $this->author->name ?? 'Unknown',

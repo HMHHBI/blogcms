@@ -8,103 +8,130 @@ use App\Models\Post;
 use App\Http\Resources\PostResource;
 use App\Http\Requests\StorePostRequest;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+// SDK imports
+use Cloudinary\Configuration\Configuration;
+use Cloudinary\Api\Upload\UploadApi;
 
 class PostController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Cloudinary instance banane ka helper function (taake code repeat na ho)
+    private function cloudinary()
+    {
+        $config = Configuration::instance(env('CLOUDINARY_URL'));
+        return new UploadApi($config);
+    }
+
     public function index()
     {
-        // ✅ 'with' use karne se "N+1 Problem" solve ho jati hai
         $posts = Post::with('category')->latest()->paginate(10);
-
         return PostResource::collection($posts);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StorePostRequest $request)
     {
-        $validated = $request->validated();
+        try {
+            $validated = $request->validated();
+            $imageUrl = null;
+            $imagePublicId = null;
 
-        // Image handling
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('posts', 'public');
+            if ($request->hasFile('image')) {
+                // Manual SDK Upload
+                $result = $this->cloudinary()->upload($request->file('image')->getRealPath(), [
+                    'folder' => 'blog-posts'
+                ]);
+
+                $imageUrl = $result['secure_url'];
+                $imagePublicId = $result['public_id'];
+            }
+
+            $post = Post::create([
+                'user_id' => $request->user()->id,
+                'category_id' => $validated['category_id'],
+                'title' => $validated['title'],
+                'slug' => Str::slug($validated['title']) . '-' . rand(100, 999),
+                'content' => $validated['content'],
+                'image_url' => $imageUrl,
+                'image_public_id' => $imagePublicId,
+                'status' => $validated['status'] ?? 'published',
+            ]);
+
+            return response()->json([
+                'message' => 'Post created successfully!',
+                'data' => new PostResource($post)
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Store Error: ' . $e->getMessage()], 500);
         }
-
-        $post = Post::create([
-            'user_id' => $request->user()->id, // ✅ Token se user ID mil jayegi
-            'category_id' => $validated['category_id'],
-            'title' => $validated['title'],
-            'slug' => Str::slug($validated['title']) . '-' . rand(100, 999),
-            'content' => $validated['content'],
-            'image' => $imagePath,
-            'status' => $validated['status'] ?? 'published',
-        ]);
-
-        return response()->json([
-            'message' => 'Post created successfully!',
-            'data' => new PostResource($post) // Naya post clean format mein wapas bhej diya
-        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    public function update(StorePostRequest $request, Post $post)
+    {
+        try {
+            $validated = $request->validated();
+
+            if ($request->hasFile('image')) {
+                // Old image delete logic
+                if (!empty($post->image_public_id)) {
+                    try {
+                        // SDK delete call
+                        $config = Configuration::instance(env('CLOUDINARY_URL'));
+                        $adminApi = new \Cloudinary\Api\Admin\AdminApi($config);
+                        $adminApi->deleteAssets([$post->image_public_id]);
+                    } catch (\Exception $e) {
+                        Log::info("Image delete skip: " . $e->getMessage());
+                    }
+                }
+
+                // Manual SDK Upload
+                $result = $this->cloudinary()->upload($request->file('image')->getRealPath(), [
+                    'folder' => 'blog-posts'
+                ]);
+
+                $validated['image_url'] = $result['secure_url'];
+                $validated['image_public_id'] = $result['public_id'];
+            }
+
+            if ($post->title !== $validated['title']) {
+                $validated['slug'] = Str::slug($validated['title']) . '-' . rand(100, 999);
+            }
+
+            $post->update($validated);
+
+            return response()->json([
+                'message' => 'Post updated successfully!',
+                'data' => new PostResource($post)
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Update Error: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function show(Post $post)
     {
-        // Eager load category and author for detail view
         $post->load(['category', 'author']);
-
         return new PostResource($post);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(StorePostRequest $request, Post $post)
-    {
-        $validated = $request->validated();
-
-        // 1. Image Handling (Agar nayi image aayi hai)
-        if ($request->hasFile('image')) {
-            // Purani image delete karein
-            if ($post->image) {
-                Storage::disk('public')->delete($post->image);
-            }
-            // Nayi image store karein
-            $validated['image'] = $request->file('image')->store('posts', 'public');
-        }
-
-        // 2. Slug update (Optional: agar title badla hai)
-        $validated['slug'] = Str::slug($validated['title']) . '-' . rand(100, 999);
-
-        // 3. Update Database
-        $post->update($validated);
-
-        return response()->json([
-            'message' => 'Post updated successfully!',
-            'data' => new PostResource($post)
-        ]);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Request $request, Post $post)
     {
-        // Authorization check
         if ($request->user()->id !== $post->user_id) {
-            return response()->json(['message' => 'Aap dusre ki post delete nahi kar sakte!'], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Database se record delete karein
-        $post->delete();
+        // SDK delete in destroy
+        if ($post->image_public_id) {
+            try {
+                $config = Configuration::instance(env('CLOUDINARY_URL'));
+                $adminApi = new \Cloudinary\Api\Admin\AdminApi($config);
+                $adminApi->deleteAssets([$post->image_public_id]);
+            } catch (\Exception $e) {
+            }
+        }
 
-        return response()->json(['message' => 'Post delete kar di gayi hai.']);
+        $post->delete();
+        return response()->json(['message' => 'Post deleted successfully.']);
     }
 }
