@@ -10,6 +10,29 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --animate-subtle: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Selection Color */
+::selection {
+  background-color: #f5f3ff; /* violet-50 */
+  color: #7c3aed; /* violet-600 */
+}
+
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 5px;
+  border: 2px solid #f8fafc;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7c3aed;
 }
 
 @media (prefers-color-scheme: dark) {
