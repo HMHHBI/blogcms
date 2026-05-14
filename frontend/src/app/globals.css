@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@plugin "@tailwindcss/typography";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -33,6 +35,17 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #7c3aed;
+}
+
+/* Sidebar se scrollbar chupane ke liye */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

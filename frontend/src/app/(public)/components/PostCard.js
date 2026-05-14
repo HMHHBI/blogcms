@@ -1,8 +1,11 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import DOMPurify from "dompurify";
 
 export default function PostCard({ post }) {
+  const cleanBody =
+    typeof window !== "undefined" ? DOMPurify.sanitize(post.body) : post.body;
   return (
     <article className="group bg-white rounded-3xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
       <div className="relative h-64 w-full overflow-hidden bg-gray-200">
@@ -30,7 +33,10 @@ export default function PostCard({ post }) {
           {post.post_title}
         </h2>
         <p className="text-gray-500 text-sm mb-6 line-clamp-3 leading-relaxed">
-          {post.body}
+          <span
+            className="prose prose-indigo prose-xl max-w-none text-slate-700 leading-relaxed font-serif"
+            dangerouslySetInnerHTML={{ __html: cleanBody }}
+          />
         </p>
 
         <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">

@@ -1,8 +1,12 @@
 "use client";
 // Saare imports wahi purane
 import Link from "next/link";
+import DOMPurify from "dompurify";
 
 export default function PostContent({ post }) {
+  const cleanBody =
+    typeof window !== "undefined" ? DOMPurify.sanitize(post.body) : post.body;
+
   return (
     <main className="bg-white min-h-screen pb-20">
       <nav className="max-w-4xl mx-auto px-6 py-8">
@@ -36,7 +40,10 @@ export default function PostContent({ post }) {
         )}
 
         <div className="prose prose-indigo prose-xl max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap font-serif">
-          {post.body}
+          <div
+            className="prose prose-indigo prose-xl max-w-none text-slate-700 leading-relaxed font-serif"
+            dangerouslySetInnerHTML={{ __html: cleanBody }}
+          />
         </div>
       </article>
     </main>
