@@ -13,7 +13,11 @@ export default function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/register", { email, password });
+      const res = await axios.post("/register", {
+        email,
+        password,
+        password_confirmation: confirmPassword,
+      });
       const token = res.data.token;
 
       // 1. LocalStorage for Client-side
@@ -23,9 +27,9 @@ export default function Register() {
       // Hum cookie set kar rahe hain jo 7 din tak valid hogi
       document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax;`;
 
-      router.push("/admin/create");
+      router.push("/dashboard");
     } catch (err) {
-      alert("Invalid Credentials!");
+      alert(err.response?.data?.message || "Registration failed!");
     }
   };
 

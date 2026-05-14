@@ -6,13 +6,16 @@ export default function DashboardOverview() {
   const [stats, setStats] = useState({ posts: 0, categories: 0 });
 
   useEffect(() => {
-    // Abhi ke liye hum simple posts fetch karke count nikal sakte hain
-    axios.get("/posts").then((res) => {
-      setStats({
-        posts: res.data.data.length,
-        categories: 5, // Static for now
-      });
-    });
+    // ✅ Naya Dashboard Stats API call
+    axios
+      .get("/admin/stats")
+      .then((res) => {
+        setStats({
+          posts: res.data.posts,
+          categories: res.data.categories,
+        });
+      })
+      .catch((err) => console.error("Stats fetch failed", err));
   }, []);
 
   const cards = [
