@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "@/lib/axios";
 import Link from "next/link";
-import Navbar from "./components/Navbar";
+import DOMPurify from "dompurify";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -17,6 +17,11 @@ export default function Home() {
 
   const trendingPost = posts[0];
   const recentPosts = posts.slice(1, 5);
+
+  const cleanBody =
+    typeof window !== "undefined" && trendingPost?.body
+      ? DOMPurify.sanitize(trendingPost.body)
+      : trendingPost?.body || "";
 
   return (
     <main className="bg-white text-slate-900">
@@ -107,7 +112,7 @@ export default function Home() {
                     </h3>
 
                     <p className="text-slate-600 text-lg leading-relaxed line-clamp-3">
-                      {trendingPost.body}
+                      <span dangerouslySetInnerHTML={{ __html: cleanBody }} />
                     </p>
                   </article>
                 </Link>

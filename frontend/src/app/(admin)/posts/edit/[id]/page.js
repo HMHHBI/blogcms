@@ -57,7 +57,7 @@ export default function EditPost() {
       await axios.post(`/posts/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      router.push("/admin/dashboard");
+      router.push("/dashboard");
     } catch (err) {
       alert("Update failed");
     }
