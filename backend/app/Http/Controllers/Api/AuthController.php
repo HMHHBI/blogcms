@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -30,6 +29,27 @@ class AuthController extends Controller
             'user' => $user->name,
             'token' => $token, // Ye token frontend wala apne paas save kar lega
         ]);
+    }
+
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed', // 'password_confirmation' field zaroori hai
+        ]);
+
+        $user = User::create([
+            'name' => explode('@', $data['email'])[0], // Email se temp name nikalna
+            'email' => $data['email'],
+            'password' => bcrypt($data['password']),
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user
+        ], 201);
     }
 
     public function logout(Request $request)
