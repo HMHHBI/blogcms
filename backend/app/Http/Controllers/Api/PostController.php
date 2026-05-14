@@ -15,11 +15,20 @@ use Cloudinary\Api\Upload\UploadApi;
 
 class PostController extends Controller
 {
-    // Cloudinary instance banane ka helper function (taake code repeat na ho)
     private function cloudinary()
     {
         $config = Configuration::instance(env('CLOUDINARY_URL'));
         return new UploadApi($config);
+    }
+
+    private function sanitizeContent($content)
+    {
+        // 1. &nbsp; ko normal space se badalna taake frontend par overflow na ho
+        $content = str_replace('&nbsp;', ' ', $content);
+
+        // 2. Dangerous tags nikalna (Script, Iframe) par headings/formatting rehne dena
+        $allowedTags = '<h1><h2><h3><h4><h5><h6><p><b><strong><i><em><ul><ol><li><br><a>';
+        return strip_tags($content, $allowedTags);
     }
 
     public function index()
@@ -32,6 +41,9 @@ class PostController extends Controller
     {
         try {
             $validated = $request->validated();
+
+            $cleanContent = $this->sanitizeContent($validated['content']);
+
             $imageUrl = null;
             $imagePublicId = null;
 
@@ -50,7 +62,7 @@ class PostController extends Controller
                 'category_id' => $validated['category_id'],
                 'title' => $validated['title'],
                 'slug' => Str::slug($validated['title']) . '-' . rand(100, 999),
-                'content' => $validated['content'],
+                'content' => $cleanContent,
                 'image_url' => $imageUrl,
                 'image_public_id' => $imagePublicId,
                 'status' => $validated['status'] ?? 'published',
@@ -70,6 +82,10 @@ class PostController extends Controller
     {
         try {
             $validated = $request->validated();
+
+            if (isset($validated['content'])) {
+                $validated['content'] = $this->sanitizeContent($validated['content']);
+            }
 
             if ($request->hasFile('image')) {
                 // Old image delete logic

@@ -34,22 +34,20 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
+            'name' => 'required|string|max:255', // ✅ Name field add karein
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed', // 'password_confirmation' field zaroori hai
+            'password' => 'required|min:6|confirmed',
         ]);
 
         $user = User::create([
-            'name' => explode('@', $data['email'])[0], // Email se temp name nikalna
+            'name' => $data['name'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
-            'user' => $user
-        ], 201);
+        return response()->json(['token' => $token, 'user' => $user], 201);
     }
 
     public function logout(Request $request)
