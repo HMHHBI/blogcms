@@ -30,11 +30,16 @@ export default function Navbar() {
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link
           href="/"
-          className="text-2xl font-black tracking-tighter text-slate-900"
+          className="flex items-center gap-3 group font-black text-xl"
         >
-          HASSAN<span className="text-indigo-600">.</span>
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            B
+          </div>
+          <span>
+            <span className="text-black">Blog</span>
+            <span className="text-indigo-600">CMS</span>
+          </span>
         </Link>
-
         {/* Mobile Toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -104,10 +109,7 @@ export default function Navbar() {
           </Link>
           {isLoggedIn ? (
             <>
-              <Link
-                href="/dashboard"
-                className="text-violet-600 font-bold"
-              >
+              <Link href="/dashboard" className="text-violet-600 font-bold">
                 Dashboard
               </Link>
               <button
