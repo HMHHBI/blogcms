@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react"; // ✅ useRef add kiya
 import axios from "@/lib/axios";
 import Link from "next/link";
 import DOMPurify from "dompurify";
+import CommentSection from "./CommentSection";
 import {
   Calendar,
   Clock,
@@ -13,17 +14,25 @@ import {
   Link2,
   Send,
   MessageCircle,
+  MessageSquareText, // ✅ Jump icon
 } from "lucide-react";
 
 export default function PostContent({ post }) {
   const [relatedPosts, setRelatedPosts] = useState([]);
   const [showShare, setShowShare] = useState(false);
 
+  // ✅ Comment section ke liye reference banaya
+  const commentSectionRef = useRef(null);
+
+  // ✅ Smooth scroll function
+  const scrollToComments = () => {
+    commentSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // ✅ Fetch Related Posts based on Category
   useEffect(() => {
     if (post.category_id) {
       axios.get(`/posts?category=${post.category_id}&limit=3`).then((res) => {
-        // Current post ko filter kar rahe hain taake wo list mein dobara na aaye
         const filtered = res.data.data.filter((p) => p.id !== post.id);
         setRelatedPosts(filtered.slice(0, 3));
       });
@@ -117,7 +126,29 @@ export default function PostContent({ post }) {
                   </p>
                 </div>
               </div>
+
               <div className="h-8 w-px bg-slate-100 hidden md:block"></div>
+
+              {/* ✅ JUMP TO COMMENTS BUTTON */}
+              <button
+                onClick={scrollToComments}
+                className="flex items-center gap-3 group"
+              >
+                <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                  <MessageSquareText size={16} />
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                    Join In
+                  </p>
+                  <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition">
+                    Discussion
+                  </p>
+                </div>
+              </button>
+
+              <div className="h-8 w-px bg-slate-100 hidden md:block"></div>
+
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
                   Published
@@ -129,15 +160,6 @@ export default function PostContent({ post }) {
                     day: "numeric",
                     year: "numeric",
                   })}
-                </div>
-              </div>
-              <div className="h-8 w-px bg-slate-100 hidden md:block"></div>
-              <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
-                  Read Time
-                </p>
-                <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                  <Clock size={14} className="text-indigo-500" /> 5 Min Read
                 </div>
               </div>
             </div>
@@ -157,12 +179,17 @@ export default function PostContent({ post }) {
             className="prose prose-slate prose-lg md:prose-xl max-w-none prose-headings:font-black prose-p:leading-relaxed prose-p:text-slate-600 prose-img:rounded-3xl wrap-break-word"
             dangerouslySetInnerHTML={{ __html: cleanBody }}
           />
+
+          {/* ✅ COMMENT SECTION WITH REF */}
+          <div className="mt-16" ref={commentSectionRef}>
+            <CommentSection postId={post.id} initialComments={post.comments} />
+          </div>
         </article>
 
         {/* --- SIDEBAR (30%) --- */}
         <aside className="lg:col-span-4 space-y-12">
           <div className="sticky top-32 space-y-12">
-            {/* ✅ Related Posts Section */}
+            {/* Related Posts Section */}
             {relatedPosts.length > 0 && (
               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-2">
