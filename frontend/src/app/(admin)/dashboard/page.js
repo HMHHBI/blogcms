@@ -10,25 +10,32 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { BookOpen, Layers, Zap, Lightbulb } from "lucide-react";
-
-const data = [
-  { name: "Mon", views: 400 },
-  { name: "Tue", views: 700 },
-  { name: "Wed", views: 500 },
-  { name: "Thu", views: 1200 },
-  { name: "Fri", views: 900 },
-  { name: "Sat", views: 1500 },
-  { name: "Sun", views: 1800 },
-];
+import {
+  BookOpen,
+  Layers,
+  Zap,
+  Lightbulb,
+  MessageSquare,
+  ArrowUpRight,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardOverview() {
-  const [stats, setStats] = useState({ posts: 0, categories: 0 });
+  const [stats, setStats] = useState({
+    posts: 0,
+    categories: 0,
+    pending_comments: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("/admin/stats").then((res) => {
-      setStats({ posts: res.data.posts, categories: res.data.categories });
-    });
+    axios
+      .get("/admin/stats")
+      .then((res) => {
+        setStats(res.data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const cards = [
@@ -36,101 +43,149 @@ export default function DashboardOverview() {
       title: "Total Stories",
       value: stats.posts,
       color: "text-indigo-600",
-      icon: <BookOpen />,
+      icon: <BookOpen size={20} />,
       bg: "bg-indigo-50",
+      link: "/posts",
     },
     {
-      title: "Categories",
-      value: stats.categories,
+      title: "Pending Comments",
+      value: stats.pending_comments,
+      color: "text-rose-600",
+      icon: <MessageSquare size={20} />,
+      bg: "bg-rose-50",
+      link: "/comments",
+    },
+    {
+      title: "System Load",
+      value: "Optimal",
       color: "text-emerald-600",
-      icon: <Layers />,
+      icon: <Zap size={20} />,
       bg: "bg-emerald-50",
-    },
-    {
-      title: "Performance",
-      value: "+24%",
-      color: "text-amber-600",
-      icon: <Zap />,
-      bg: "bg-amber-50",
+      link: "#",
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-32 bg-slate-100 rounded-4xl"></div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 animate-in fade-in duration-500">
+      {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {cards.map((card, i) => (
-          <div
+          <Link
+            href={card.link}
             key={i}
-            className={`${card.bg} p-8 rounded-4xl border border-white shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform`}
+            className={`${card.bg} p-8 rounded-[2.5rem] border border-white shadow-sm flex items-center justify-between hover:shadow-xl hover:-translate-y-1 transition-all group`}
           >
             <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
                 {card.title}
               </p>
               <p className={`text-4xl font-black ${card.color}`}>
                 {card.value}
               </p>
             </div>
-            <div className="p-4 bg-white/50 rounded-2xl">{card.icon}</div>
-          </div>
+            <div className="p-4 bg-white rounded-2xl shadow-sm group-hover:rotate-12 transition-transform">
+              {card.icon}
+            </div>
+          </Link>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-50">
-          <h3 className="text-xl font-bold text-slate-800 mb-8">
-            Weekly Engagement
-          </h3>
-          <div className="h-80 w-full">
+        {/* Engagement Chart */}
+        <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                Engagement Flow
+              </h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                Weekly activity metrics
+              </p>
+            </div>
+            <button className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">
+              Full Report
+            </button>
+          </div>
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
+              <AreaChart
+                data={[
+                  { name: "Mon", v: 400 },
+                  { name: "Tue", v: 700 },
+                  { name: "Wed", v: 500 },
+                  { name: "Thu", v: 1200 },
+                  { name: "Fri", v: 900 },
+                  { name: "Sat", v: 1500 },
+                  { name: "Sun", v: 1800 },
+                ]}
+              >
                 <defs>
-                  <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
+                  <linearGradient id="colorV" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
-                  stroke="#f1f5f9"
+                  stroke="#f8fafc"
                 />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 12 }}
+                  tick={{ fill: "#cbd5e1", fontSize: 10, fontWeight: "bold" }}
                   dy={10}
                 />
-                <YAxis hide />
                 <Tooltip
                   contentStyle={{
-                    borderRadius: "16px",
+                    borderRadius: "20px",
                     border: "none",
-                    boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                    boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
+                    padding: "15px",
                   }}
                 />
                 <Area
                   type="monotone"
-                  dataKey="views"
+                  dataKey="v"
                   stroke="#6366f1"
                   strokeWidth={4}
-                  fill="url(#colorViews)"
+                  fill="url(#colorV)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+        {/* Insights Card */}
+        <div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden flex flex-col justify-between">
           <div className="relative z-10">
-            <Lightbulb className="text-amber-400 mb-6" size={32} />
-            <h3 className="text-2xl font-bold mb-4">Insights</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-8">
-              Aapka traffic raat ke waqt zyada hota hai. Scheduled posts use
-              karein.
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-8">
+              <Lightbulb className="text-amber-400" size={24} />
+            </div>
+            <h3 className="text-2xl font-black mb-4 tracking-tight">
+              AI Insights
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed mb-8 font-medium">
+              Aapki "AI Engine" wali posts par 40% zyada engagement aa rahi hai.
+              Mazeed technical content likhne ka mashwara hai.
             </p>
           </div>
+          <button className="relative z-10 w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+            Optimize Strategy <ArrowUpRight size={14} />
+          </button>
+
+          {/* Decorative Circle */}
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
         </div>
       </div>

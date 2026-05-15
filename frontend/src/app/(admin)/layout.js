@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Bell,
   User as UserIcon,
+  MessageSquare,
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -36,6 +37,7 @@ export default function AdminLayout({ children }) {
     },
     { name: "All Posts", href: "/posts", icon: <FileText size={20} /> },
     { name: "Categories", href: "/categories", icon: <Tags size={20} /> },
+    { name: "Comments", href: "/comments", icon: <MessageSquare size={20} /> },
   ];
 
   return (
