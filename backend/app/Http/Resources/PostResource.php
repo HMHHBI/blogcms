@@ -23,7 +23,7 @@ class PostResource extends JsonResource
             'is_premium' => (bool) $this->is_premium,
             'published_at' => $this->created_at->format('d M Y'),
             'category_id' => $this->category_id,
-            // ✅ Category ka data clean karke bhej rahe hain
+            'comments' => CommentResource::collection($this->whenLoaded('comments')),
             'category' => new CategoryResource($this->whenLoaded('category')),
             'author' => $this->author->name ?? 'Unknown',
         ];

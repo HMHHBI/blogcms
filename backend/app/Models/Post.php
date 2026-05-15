@@ -21,4 +21,13 @@ class Post extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function comments()
+    {
+        // Sirf top-level approved comments load karein
+        return $this->hasMany(Comment::class)
+            ->whereNull('parent_id')
+            ->where('is_approved', true)
+            ->latest();
+    }
 }

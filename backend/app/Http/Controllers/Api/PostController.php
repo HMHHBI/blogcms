@@ -127,7 +127,7 @@ class PostController extends Controller
 
     public function show(Post $post)
     {
-        $post->load(['category', 'author']);
+        $post->load(['category', 'author', 'comments.user', 'comments.replies']);
         return new PostResource($post);
     }
 
