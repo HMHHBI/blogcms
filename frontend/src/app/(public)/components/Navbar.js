@@ -1,13 +1,15 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation"; // ✅ usePathname add kiya
 import axios from "@/lib/axios";
+import { Menu, X, LayoutDashboard, LogOut, Code2 } from "lucide-react";
 
-export default function Navbar() {
+export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname(); // ✅ Current path check karne ke liye
 
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem("token"));
@@ -16,121 +18,169 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await axios.post("/logout");
+      localStorage.removeItem("token");
+      document.cookie =
+        "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+      setIsLoggedIn(false);
+      setIsOpen(false); // Mobile menu band karne ke liye
+      router.push("/");
     } catch (e) {
       console.error("Logout error");
     }
-    localStorage.removeItem("token");
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    setIsLoggedIn(false);
-    router.push("/");
   };
 
-  return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        <Link
-          href="/"
-          className="flex items-center gap-3 group font-black text-xl"
-        >
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            B
-          </div>
-          <span>
-            <span className="text-black">Blog</span>
-            <span className="text-indigo-600">CMS</span>
-          </span>
-        </Link>
-        {/* Mobile Toggle */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-2 text-slate-600"
-        >
-          {isOpen ? "✕" : "☰"}
-        </button>
+  // ✅ Navigation Items with Logic
+  const navItems = [
+    { name: "Home", href: "/" },
+    { name: "Blogs", href: "/blogs" },
+    { name: "About", href: "/about" },
+  ];
 
-        {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-          <Link href="/" className="hover:text-indigo-600 transition">
-            Home
-          </Link>
-          <Link href="/blogs" className="hover:text-indigo-600 transition">
-            Blogs
-          </Link>
-          <Link href="#about" className="hover:text-indigo-600 transition">
-            About
-          </Link>
-          {/* Auth Actions */}
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/70 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        {/* LOGO */}
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6 shadow-lg shadow-slate-200">
+            <span className="text-3xl font-black tracking-tighter leading-none text-white">
+              B
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-black tracking-wide text-slate-900 leading-none">
+              Blog<span className="text-indigo-600">CMS</span>
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">
+              Engineering
+            </span>
+          </div>
+        </Link>
+
+        {/* DESKTOP NAV */}
+        <nav className="hidden md:flex items-center gap-10">
+          <div className="flex items-center gap-8">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`relative text-xs font-black uppercase tracking-widest transition-colors pb-1 ${
+                    isActive
+                      ? "text-indigo-600"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  {item.name}
+                  {/* ✅ Active Indicator Dot */}
+                  {isActive && (
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-600 rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="h-6 w-px bg-slate-100" />
+
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
               <>
                 <Link
                   href="/dashboard"
-                  className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
+                  className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition shadow-sm border border-indigo-100"
                 >
-                  Dashboard
+                  <LayoutDashboard size={14} /> Dashboard
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="bg-slate-100 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-50 hover:text-red-600 transition"
+                  className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                  title="Logout"
                 >
-                  Logout
+                  <LogOut size={18} />
                 </button>
               </>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="text-slate-900 font-bold hover:text-indigo-600 transition text-sm px-4"
+                  className="text-xs font-black uppercase tracking-widest text-slate-900 hover:text-indigo-600 px-4"
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
+                  className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
                 >
-                  Register
+                  Join Now
                 </Link>
               </>
             )}
           </div>
-        </div>
+        </nav>
+
+        {/* MOBILE TOGGLE */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden p-2 text-slate-600 bg-slate-50 rounded-lg active:scale-95 transition"
+        >
+          {isOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
-      {/* Mobile Menu Dropdown */}
+
+      {/* MOBILE MENU */}
       {isOpen && (
-        <div className="md:hidden bg-white border-b border-slate-100 p-6 space-y-4 flex flex-col shadow-xl">
-          <Link href="/" className="font-bold text-slate-900">
-            Home
-          </Link>
-          <Link href="/blogs" className="font-bold text-slate-900">
-            Blogs
-          </Link>
-          <Link href="#about" className="font-bold text-slate-900">
-            About
-          </Link>
+        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 p-8 flex flex-col gap-6 shadow-2xl animate-in slide-in-from-top-5">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={() => setIsOpen(false)}
+              className={`text-sm font-black uppercase tracking-widest ${
+                pathname === item.href ? "text-indigo-600" : "text-slate-900"
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
+          <hr className="border-slate-50" />
           {isLoggedIn ? (
-            <>
-              <Link href="/dashboard" className="text-violet-600 font-bold">
-                Dashboard
+            <div className="flex flex-col gap-4">
+              <Link
+                href="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 py-4 rounded-2xl font-black uppercase tracking-widest text-sm"
+              >
+                <LayoutDashboard size={16} /> Dashboard
               </Link>
+              {/* ✅ Mobile Logout Button FIXED */}
               <button
                 onClick={handleLogout}
-                className="text-violet-600 font-bold"
+                className="flex items-center justify-center gap-2 bg-red-50 text-red-600 py-4 rounded-2xl font-black uppercase tracking-widest text-sm"
               >
-                Logout
+                <LogOut size={16} /> Logout
               </button>
-            </>
+            </div>
           ) : (
-            <>
-              <Link href="/login" className="text-violet-600 font-bold">
+            <div className="flex flex-col gap-4">
+              <Link
+                href="/login"
+                onClick={() => setIsOpen(false)}
+                className="text-sm font-black uppercase tracking-widest text-slate-900 py-2"
+              >
                 Login
               </Link>
-              <Link href="/register" className="text-violet-600 font-bold">
-                Register
+              <Link
+                href="/register"
+                onClick={() => setIsOpen(false)}
+                className="bg-slate-900 text-white text-center py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl"
+              >
+                Join Now
               </Link>
-            </>
+            </div>
           )}
         </div>
       )}
-    </nav>
+    </header>
   );
 }
